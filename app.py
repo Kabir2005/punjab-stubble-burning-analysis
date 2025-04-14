@@ -13,7 +13,7 @@ import visualization as vis
 # Set page configuration
 st.set_page_config(
     page_title="Punjab Stubble Burning Analysis",
-    page_icon="🔥",
+    page_icon="🌾",
     layout="wide"
 )
 
@@ -46,6 +46,45 @@ st.markdown("""
         display: flex;
         flex-wrap: wrap;
         gap: 5px;
+    }
+    
+    /* Sleeker design */
+    .stApp {
+        background-color: #f8f9fa;
+    }
+    
+    h1, h2, h3, h4 {
+        font-weight: 400;
+        color: #444;
+    }
+    
+    .stSidebar .stMarkdown h3 {
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+    
+    div[data-testid="stMetricValue"] {
+        font-weight: 600;
+        color: #d32f2f;
+    }
+    
+    div[data-testid="stMetricLabel"] {
+        color: #666;
+    }
+    
+    /* Clean borders for containers */
+    [data-testid="stVerticalBlock"] > div:has([data-testid="stMetric"]) {
+        background-color: white;
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    
+    /* Streamlit component styling */
+    .stMultiSelect, .css-12oz5g7 {
+        max-width: 100%;
+        padding: 0;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -108,7 +147,7 @@ def main():
     # Main content - Map and interactive elements
     with left_col:
         # App title & brief description
-        st.title("🔥 Punjab Stubble Burning Analysis")
+        st.title("Punjab Stubble Burning Analysis")
         st.markdown("""
         Interactive visualization of stubble burning across Punjab districts (2020-2025).
         Click on districts or use filters to explore fire events data.

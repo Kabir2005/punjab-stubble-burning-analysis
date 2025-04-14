@@ -36,7 +36,7 @@ def point_in_polygon(point, polygon):
 
 def create_base_map():
     """
-    Create a base map centered on Punjab
+    Create a base map centered on Punjab with strict boundaries
     
     Returns:
         folium.Map: Base map object
@@ -50,15 +50,28 @@ def create_base_map():
         zoom_start=8,
         tiles='CartoDB positron',
         max_bounds=True,  # Limit panning to Punjab area
-        min_zoom=7  # Prevent zooming out too far
+        min_zoom=7,       # Prevent zooming out too far
+        max_zoom=12,      # Prevent zooming in too much
+        zoom_control=True,
+        scrollWheelZoom=True
     )
     
-    # Add zoom boundary limit to keep focus on Punjab
+    # Define Punjab boundary more precisely
     bounds = [
-        [29.5, 73.8],  # Southwest corner
-        [32.5, 76.8]   # Northeast corner
+        [30.0, 74.0],  # Southwest corner (tighter)
+        [32.0, 76.5]   # Northeast corner (tighter)
     ]
     m.fit_bounds(bounds)
+    
+    # Add a rectangle boundary for Punjab
+    folium.Rectangle(
+        bounds=bounds,
+        color="#444444",
+        weight=1,
+        fill=False,
+        fill_opacity=0.0,
+        dashArray="5, 5",
+    ).add_to(m)
     
     return m
 
