@@ -3,6 +3,36 @@ from folium.plugins import MarkerCluster
 from streamlit_folium import folium_static
 import branca.colormap as cm
 import pandas as pd
+import numpy as np
+
+def point_in_polygon(point, polygon):
+    """
+    Check if a point is inside a polygon using the ray casting algorithm
+    
+    Args:
+        point (tuple): (lon, lat) coordinates
+        polygon (list): List of (lon, lat) points forming the polygon
+        
+    Returns:
+        bool: True if point is inside polygon, False otherwise
+    """
+    x, y = point
+    n = len(polygon)
+    inside = False
+    
+    p1x, p1y = polygon[0]
+    for i in range(1, n + 1):
+        p2x, p2y = polygon[i % n]
+        if y > min(p1y, p2y):
+            if y <= max(p1y, p2y):
+                if x <= max(p1x, p2x):
+                    if p1y != p2y:
+                        xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+                        if p1x == p2x or x <= xinters:
+                            inside = not inside
+        p1x, p1y = p2x, p2y
+    
+    return inside
 
 def create_base_map():
     """
@@ -18,8 +48,17 @@ def create_base_map():
     m = folium.Map(
         location=[center_lat, center_lon],
         zoom_start=8,
-        tiles='CartoDB positron'
+        tiles='CartoDB positron',
+        max_bounds=True,  # Limit panning to Punjab area
+        min_zoom=7  # Prevent zooming out too far
     )
+    
+    # Add zoom boundary limit to keep focus on Punjab
+    bounds = [
+        [29.5, 73.8],  # Southwest corner
+        [32.5, 76.8]   # Northeast corner
+    ]
+    m.fit_bounds(bounds)
     
     return m
 
@@ -93,23 +132,46 @@ def add_fire_markers(m, fire_data):
         folium.Map: Map with fire markers
     """
     # Create a marker cluster for better performance with many points
-    marker_cluster = MarkerCluster(name='Fire Events').add_to(m)
+    marker_cluster = MarkerCluster(
+        name='Fire Events',
+        icon_create_function="""
+        function(cluster) {
+            var count = cluster.getChildCount();
+            var size = 35;
+            if (count > 100) {
+                size = 45;
+            } else if (count > 50) {
+                size = 40;
+            }
+            
+            return L.divIcon({
+                html: '<div style="background-color: rgba(255, 0, 0, 0.7); color: white; border-radius: 50%; width: ' + size + 'px; height: ' + size + 'px; line-height: ' + size + 'px; text-align: center; font-weight: bold;">' + count + '</div>',
+                className: 'marker-cluster-custom',
+                iconSize: L.point(size, size)
+            });
+        }
+        """
+    ).add_to(m)
     
     # Add each fire event as a marker
     for _, row in fire_data.iterrows():
         popup_html = f"""
-        <b>Date:</b> {row['date'].strftime('%Y-%m-%d')}<br>
-        <b>District:</b> {row['district']}<br>
-        <b>Location:</b> {row['lat']:.4f}, {row['long']:.4f}
+        <div style="font-family: Arial, sans-serif; min-width: 180px;">
+            <h4 style="margin: 0; color: #d32f2f; border-bottom: 1px solid #eee; padding-bottom: 5px;">Fire Event</h4>
+            <p style="margin: 5px 0;"><b>Date:</b> {row['date'].strftime('%Y-%m-%d')}</p>
+            <p style="margin: 5px 0;"><b>District:</b> {row['district']}</p>
+            <p style="margin: 5px 0;"><b>Location:</b> {row['lat']:.4f}, {row['long']:.4f}</p>
+        </div>
         """
         
         folium.CircleMarker(
             location=[row['lat'], row['long']],
-            radius=4,
+            radius=5,
             color='red',
             fill=True,
             fill_color='red',
             fill_opacity=0.7,
+            weight=1.5,
             popup=folium.Popup(popup_html, max_width=300)
         ).add_to(marker_cluster)
     

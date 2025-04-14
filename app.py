@@ -2,7 +2,8 @@ import streamlit as st
 import pandas as pd
 import os
 import time
-from streamlit_folium import folium_static
+from streamlit_folium import st_folium
+import json
 
 # Import custom modules
 import data_processor as dp
@@ -15,6 +16,39 @@ st.set_page_config(
     page_icon="🔥",
     layout="wide"
 )
+
+# Add custom CSS to make the map container larger and improve the UI
+st.markdown("""
+<style>
+    .sidebar .sidebar-content {
+        width: 375px;
+    }
+    
+    .stButton>button {
+        border-radius: 20px;
+        font-size: 12px;
+        height: 28px;
+        padding: 0px 15px;
+        margin: 0px 2px;
+    }
+    
+    div[data-testid="stVerticalBlock"] > div[style*="flex-direction: column;"] > div[data-testid="stVerticalBlock"] {
+        gap: 5px !important;
+    }
+    
+    .map-container {
+        height: calc(100vh - 80px);
+        width: 100%;
+        margin-bottom: 20px;
+    }
+    
+    .year-selector {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 # Cache data loading to improve performance
 @st.cache_data(ttl=3600)
@@ -41,19 +75,12 @@ def main():
     """
     Main application function
     """
-    # Header with image
-    st.title("🔥 Punjab Stubble Burning Analysis")
-    st.markdown("""
-    <div style="display: flex; justify-content: center; margin-bottom: 20px;">
-        <img src="https://images.unsplash.com/photo-1577884994417-ef93c99bad67" alt="Stubble Burning" style="max-width: 100%; height: 200px; object-fit: cover; border-radius: 10px;">
-    </div>
-    """, unsafe_allow_html=True)
-
-    # App description
-    st.markdown("""
-    This application visualizes stubble burning fire events across Punjab districts from 2020 onwards. 
-    Use the map to select districts of interest, and view temporal trends in the sidebar.
-    """)
+    # Initialize session state
+    if 'map_clicked' not in st.session_state:
+        st.session_state.map_clicked = False
+    
+    if 'clicked_district' not in st.session_state:
+        st.session_state.clicked_district = None
     
     # Load data with loading spinner
     with st.spinner("Loading data..."):
@@ -75,22 +102,68 @@ def main():
     if 'selected_years' not in st.session_state:
         st.session_state.selected_years = years.copy()
     
-    # Define layout
-    col1, col2 = st.columns([2, 1])
+    # Define layout - less space for sidebar, more for map
+    left_col, right_col = st.columns([7, 3])
     
-    # Sidebar content
-    with col2:
-        st.sidebar.title("Filters & Statistics")
-        
-        # District selection
-        st.sidebar.subheader("Select Districts")
-        selected_districts = st.sidebar.multiselect(
-            "Choose districts to analyze:",
-            options=districts,
-            default=[],
-            key="district_multiselect"
+    # Main content - Map and interactive elements
+    with left_col:
+        # App title & brief description
+        st.title("🔥 Punjab Stubble Burning Analysis")
+        st.markdown("""
+        Interactive visualization of stubble burning across Punjab districts (2020-2025).
+        Click on districts or use filters to explore fire events data.
+        """)
+
+        # Create and display map
+        map_obj = mh.render_map(
+            geojson_data, 
+            districts_dict, 
+            fire_events_df.query('year.isin(@st.session_state.selected_years)'),
+            st.session_state.selected_districts
         )
-        st.session_state.selected_districts = selected_districts
+        
+        # Use st_folium instead of folium_static for improved interaction
+        map_data = st_folium(
+            map_obj, 
+            width="100%",
+            height=550,
+            returned_objects=["last_active_drawing", "last_clicked"],
+            key="folium_map"
+        )
+        
+        # Handle map click events to update selected districts
+        if map_data["last_clicked"]:
+            if st.session_state.map_clicked is False:
+                st.session_state.map_clicked = True
+                # Get clicked coordinates
+                lat, lng = map_data["last_clicked"]["lat"], map_data["last_clicked"]["lng"]
+                
+                # Find which district was clicked
+                clicked_district = None
+                for district_name, feature in districts_dict.items():
+                    # Skip if not a valid district
+                    if district_name == 'Unknown' or not district_name:
+                        continue
+                        
+                    # Check if point is within district boundary
+                    coordinates = feature["geometry"]["coordinates"][0]
+                    if mh.point_in_polygon((lng, lat), coordinates):
+                        clicked_district = district_name
+                        break
+                
+                if clicked_district:
+                    st.session_state.clicked_district = clicked_district
+                    # Toggle the district selection
+                    if clicked_district in st.session_state.selected_districts:
+                        st.session_state.selected_districts.remove(clicked_district)
+                    else:
+                        st.session_state.selected_districts.append(clicked_district)
+                    st.rerun()
+        else:
+            st.session_state.map_clicked = False
+        
+        # Data summary and district distribution
+        st.markdown("### Fire Events by District")
         
         # Apply filters
         filtered_data = dp.filter_data(
@@ -99,70 +172,80 @@ def main():
             selected_years=st.session_state.selected_years
         )
         
+        # District distribution chart
+        district_chart = vis.create_district_bar_chart(filtered_data)
+        st.plotly_chart(district_chart, use_container_width=True)
+    
+    # Sidebar content
+    with right_col:
+        st.markdown("## Filters & Analytics")
+        
+        # Year selection using a more compact UI
+        st.markdown("### Year Selection")
+        with st.container():
+            year_selection = st.multiselect(
+                "Select years to display:",
+                options=years,
+                default=st.session_state.selected_years,
+                key="year_multiselect"
+            )
+            
+            # Update selected years if changed
+            if year_selection != st.session_state.selected_years:
+                st.session_state.selected_years = year_selection
+                st.rerun()
+        
+        # District selection
+        st.markdown("### District Selection")
+        selected_districts = st.multiselect(
+            "Choose districts to analyze:",
+            options=districts,
+            default=st.session_state.selected_districts,
+            key="district_multiselect"
+        )
+        
+        # Update selected districts if changed via multiselect
+        if selected_districts != st.session_state.selected_districts:
+            st.session_state.selected_districts = selected_districts
+            st.rerun()
+        
         # Display statistics
-        with st.sidebar.container():
-            if selected_districts:
-                title = f"Statistics for {', '.join(selected_districts)}"
+        st.markdown("---")
+        with st.container():
+            if st.session_state.selected_districts:
+                if len(st.session_state.selected_districts) == 1:
+                    title = f"Statistics for {st.session_state.selected_districts[0]}"
+                else:
+                    title = f"Statistics for Selected Districts ({len(st.session_state.selected_districts)})"
             else:
                 title = "Punjab State Statistics"
                 
             stats = dp.get_stats(filtered_data)
             vis.render_stats_section(stats, title)
         
-        # Year selection buttons
-        st.sidebar.markdown("---")
-        new_selected_years = vis.render_year_buttons(years, st.session_state.selected_years)
-        
-        # Update selected years if changed
-        if new_selected_years != st.session_state.selected_years:
-            st.session_state.selected_years = new_selected_years
-            st.rerun()
-        
         # Visualizations
-        st.sidebar.markdown("---")
+        st.markdown("---")
         
         # Yearly trend chart
         yearly_data = dp.get_yearly_data(filtered_data)
         yearly_chart = vis.create_yearly_trend_chart(yearly_data)
-        st.sidebar.plotly_chart(yearly_chart, use_container_width=True)
+        st.plotly_chart(yearly_chart, use_container_width=True)
         
         # Monthly distribution chart
         monthly_data = dp.get_monthly_data(filtered_data)
         monthly_chart = vis.create_monthly_bar_chart(monthly_data)
-        st.sidebar.plotly_chart(monthly_chart, use_container_width=True)
-    
-    # Main content - Map and district chart
-    with col1:
-        # Instructions
-        st.markdown("""
-        ### Interactive Map
-        - Click on districts to view fire events
-        - Select districts in the sidebar for detailed analysis
-        - Zoom and pan to explore different areas
-        """)
+        st.plotly_chart(monthly_chart, use_container_width=True)
         
-        # Create and display map
-        map_obj = mh.render_map(
-            geojson_data, 
-            districts_dict, 
-            filtered_data,
-            st.session_state.selected_districts
-        )
-        
-        folium_static(map_obj, width=800, height=500)
-        
-        # District distribution chart
-        st.markdown("### District-wise Fire Events")
-        district_chart = vis.create_district_bar_chart(filtered_data)
-        st.plotly_chart(district_chart, use_container_width=True)
+        # Seasonal pattern chart
+        seasonal_chart = vis.create_seasonal_pattern_chart(filtered_data)
+        st.plotly_chart(seasonal_chart, use_container_width=True)
         
         # Display data info
         st.markdown("### Data Summary")
         st.info(f"""
         - Total districts: {len(districts)}
-        - Total fire events: {len(fire_events_df)}
+        - Fire events: {len(filtered_data)} / {len(fire_events_df)}
         - Time period: {min(years)} - {max(years)}
-        - Currently showing: {len(filtered_data)} fire events
         """)
     
     # Footer
@@ -170,7 +253,6 @@ def main():
     st.markdown("""
     <div style="text-align: center; color: gray; font-size: 0.8em;">
         Data visualization of stubble burning events in Punjab, India.
-        Images from Unsplash.
     </div>
     """, unsafe_allow_html=True)
 

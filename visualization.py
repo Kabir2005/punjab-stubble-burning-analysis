@@ -2,6 +2,8 @@ import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
 import pandas as pd
+from plotly.subplots import make_subplots
+import numpy as np
 
 def create_yearly_trend_chart(yearly_data):
     """
@@ -165,6 +167,65 @@ def render_stats_section(stats, title):
         st.metric("Peak Year", stats['peak_year'])
     with col2:
         st.metric("Peak Month", stats['peak_month'])
+
+def create_seasonal_pattern_chart(df):
+    """
+    Create a heatmap showing seasonal patterns by month and year
+    
+    Args:
+        df (pd.DataFrame): Fire event data
+        
+    Returns:
+        plotly.graph_objects.Figure: Heatmap figure
+    """
+    if df.empty:
+        return create_empty_chart("No data available for selected filters")
+    
+    # Group by year and month, count occurrences
+    year_month_counts = df.groupby(['year', 'month']).size().reset_index(name='count')
+    
+    # Create a pivot table
+    pivot_data = year_month_counts.pivot_table(
+        index='month', 
+        columns='year', 
+        values='count',
+        fill_value=0
+    )
+    
+    # Get month names in order
+    month_names = {
+        1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'May', 6: 'Jun',
+        7: 'Jul', 8: 'Aug', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dec'
+    }
+    
+    # Create heatmap
+    fig = px.imshow(
+        pivot_data,
+        labels=dict(x="Year", y="Month", color="Fire Events"),
+        x=pivot_data.columns,
+        y=[month_names[m] for m in pivot_data.index],
+        color_continuous_scale='Reds',
+        title='Seasonal Fire Event Patterns'
+    )
+    
+    fig.update_layout(
+        height=350,
+        margin=dict(l=20, r=20, t=50, b=20),
+        coloraxis_colorbar=dict(
+            title="Count",
+            thicknessmode="pixels", 
+            thickness=15,
+            lenmode="pixels", 
+            len=300
+        )
+    )
+    
+    fig.update_xaxes(
+        tickvals=list(pivot_data.columns),
+        ticktext=[str(int(year)) for year in pivot_data.columns]
+    )
+    
+    return fig
 
 def render_year_buttons(available_years, selected_years):
     """
