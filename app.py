@@ -161,17 +161,33 @@ def main():
             st.session_state.selected_districts
         )
         
-        # Use st_folium instead of folium_static for improved interaction
-        map_data = st_folium(
-            map_obj, 
-            width="100%",
-            height=600,
-            returned_objects=["last_active_drawing", "last_clicked"],
-            key="folium_map",
-            # Ensure proper rendering with no overlap with console
-            feature_group_to_add=None,
-            use_container_width=True
-        )
+        # Use streamlit container to wrap the map and ensure proper display
+        map_container = st.container()
+        with map_container:
+            # Use st_folium with custom CSS to hide any console elements
+            map_data = st_folium(
+                map_obj, 
+                width="100%",
+                height=550,
+                returned_objects=["last_active_drawing", "last_clicked"],
+                key="folium_map"
+            )
+            
+            # Add custom CSS to hide the layer control dropdown console
+            st.markdown("""
+            <style>
+            /* Hide any console elements at the bottom of the map */
+            .leaflet-control-layers-base, 
+            .leaflet-control-layers-overlays {
+                display: none !important;
+            }
+            
+            /* Make the layer control button look normal but prevent dropdown */
+            .leaflet-control-layers-toggle {
+                pointer-events: none;
+            }
+            </style>
+            """, unsafe_allow_html=True)
         
         # Handle map click events to update selected districts
         if map_data["last_clicked"]:
