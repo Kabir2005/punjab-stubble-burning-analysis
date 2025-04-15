@@ -86,6 +86,36 @@ st.markdown("""
         max-width: 100%;
         padding: 0;
     }
+    
+    /* Fix for browser developer console showing in Streamlit iframe */
+    iframe {
+        overflow: hidden !important;
+    }
+    
+    /* Hide any console elements */
+    div[class*="devtools"],
+    div[class*="console"],
+    #console,
+    #devtools-console,
+    #dev-tools {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        width: 0 !important;
+        position: absolute !important;
+        z-index: -1000 !important;
+    }
+    
+    /* CSS to fix the map styling */
+    .leaflet-container {
+        background: #f8f9fa !important;
+        border-radius: 8px !important;
+        overflow: hidden !important;
+    }
+    
+    .streamlit-container .element-container:has(iframe) {
+        overflow: hidden !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -173,7 +203,7 @@ def main():
                 key="folium_map"
             )
             
-            # Add custom CSS to hide the layer control dropdown console
+            # Add custom CSS to hide the developer console and any map UI elements that cause issues
             st.markdown("""
             <style>
             /* Hide any console elements at the bottom of the map */
@@ -185,6 +215,27 @@ def main():
             /* Make the layer control button look normal but prevent dropdown */
             .leaflet-control-layers-toggle {
                 pointer-events: none;
+            }
+            
+            /* Hide browser developer tools console if open */
+            div[class*="chrome-devtools"],
+            div[class*="devtools"],
+            div[class*="console"],
+            #console,
+            #devtools {
+                display: none !important;
+                visibility: hidden !important;
+                height: 0 !important;
+                width: 0 !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+                z-index: -9999 !important;
+                position: absolute !important;
+            }
+            
+            /* Override any developer console that might be open in the map iframe */
+            iframe {
+                overflow: hidden !important;
             }
             </style>
             """, unsafe_allow_html=True)

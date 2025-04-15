@@ -299,7 +299,7 @@ def render_map(geojson_data, districts_dict, fire_data, selected_districts=None)
     # Add legend
     m = add_legend(m)
     
-    # Add layer control - position it on the top right to avoid console overlap
-    folium.LayerControl(position='topright', collapsed=True).add_to(m)
+    # Remove the layer control completely to avoid console issues
+    # folium.LayerControl(position='topright', collapsed=True).add_to(m)
     
     return m
