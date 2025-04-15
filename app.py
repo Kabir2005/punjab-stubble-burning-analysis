@@ -13,7 +13,7 @@ import visualization as vis
 # Set page configuration
 st.set_page_config(
     page_title="Punjab Stubble Burning Analysis",
-    page_icon="🌾",
+    page_icon="🔥",
     layout="wide"
 )
 
@@ -46,75 +46,6 @@ st.markdown("""
         display: flex;
         flex-wrap: wrap;
         gap: 5px;
-    }
-    
-    /* Sleeker design */
-    .stApp {
-        background-color: #f8f9fa;
-    }
-    
-    h1, h2, h3, h4 {
-        font-weight: 400;
-        color: #444;
-    }
-    
-    .stSidebar .stMarkdown h3 {
-        border-bottom: 1px solid #eee;
-        padding-bottom: 10px;
-        margin-bottom: 15px;
-    }
-    
-    div[data-testid="stMetricValue"] {
-        font-weight: 600;
-        color: #d32f2f;
-    }
-    
-    div[data-testid="stMetricLabel"] {
-        color: #666;
-    }
-    
-    /* Clean borders for containers */
-    [data-testid="stVerticalBlock"] > div:has([data-testid="stMetric"]) {
-        background-color: white;
-        padding: 10px;
-        border-radius: 5px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
-    
-    /* Streamlit component styling */
-    .stMultiSelect, .css-12oz5g7 {
-        max-width: 100%;
-        padding: 0;
-    }
-    
-    /* Fix for browser developer console showing in Streamlit iframe */
-    iframe {
-        overflow: hidden !important;
-    }
-    
-    /* Hide any console elements */
-    div[class*="devtools"],
-    div[class*="console"],
-    #console,
-    #devtools-console,
-    #dev-tools {
-        display: none !important;
-        visibility: hidden !important;
-        height: 0 !important;
-        width: 0 !important;
-        position: absolute !important;
-        z-index: -1000 !important;
-    }
-    
-    /* CSS to fix the map styling */
-    .leaflet-container {
-        background: #f8f9fa !important;
-        border-radius: 8px !important;
-        overflow: hidden !important;
-    }
-    
-    .streamlit-container .element-container:has(iframe) {
-        overflow: hidden !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -177,7 +108,7 @@ def main():
     # Main content - Map and interactive elements
     with left_col:
         # App title & brief description
-        st.title("Punjab Stubble Burning Analysis")
+        st.title("🔥 Punjab Stubble Burning Analysis")
         st.markdown("""
         Interactive visualization of stubble burning across Punjab districts (2020-2025).
         Click on districts or use filters to explore fire events data.
@@ -191,54 +122,14 @@ def main():
             st.session_state.selected_districts
         )
         
-        # Use streamlit container to wrap the map and ensure proper display
-        map_container = st.container()
-        with map_container:
-            # Use st_folium with custom CSS to hide any console elements
-            map_data = st_folium(
-                map_obj, 
-                width="100%",
-                height=550,
-                returned_objects=["last_active_drawing", "last_clicked"],
-                key="folium_map"
-            )
-            
-            # Add custom CSS to hide the developer console and any map UI elements that cause issues
-            st.markdown("""
-            <style>
-            /* Hide any console elements at the bottom of the map */
-            .leaflet-control-layers-base, 
-            .leaflet-control-layers-overlays {
-                display: none !important;
-            }
-            
-            /* Make the layer control button look normal but prevent dropdown */
-            .leaflet-control-layers-toggle {
-                pointer-events: none;
-            }
-            
-            /* Hide browser developer tools console if open */
-            div[class*="chrome-devtools"],
-            div[class*="devtools"],
-            div[class*="console"],
-            #console,
-            #devtools {
-                display: none !important;
-                visibility: hidden !important;
-                height: 0 !important;
-                width: 0 !important;
-                opacity: 0 !important;
-                pointer-events: none !important;
-                z-index: -9999 !important;
-                position: absolute !important;
-            }
-            
-            /* Override any developer console that might be open in the map iframe */
-            iframe {
-                overflow: hidden !important;
-            }
-            </style>
-            """, unsafe_allow_html=True)
+        # Use st_folium instead of folium_static for improved interaction
+        map_data = st_folium(
+            map_obj, 
+            width="100%",
+            height=550,
+            returned_objects=["last_active_drawing", "last_clicked"],
+            key="folium_map"
+        )
         
         # Handle map click events to update selected districts
         if map_data["last_clicked"]:
