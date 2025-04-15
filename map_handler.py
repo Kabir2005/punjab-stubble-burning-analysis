@@ -56,22 +56,20 @@ def create_base_map():
         scrollWheelZoom=True
     )
     
-    # Define Punjab boundary more precisely
+    # Define Punjab boundary more precisely - strictly limit to Punjab region
+    # These coordinates are adjusted to focus only on the Punjab state area
     bounds = [
-        [30.0, 74.0],  # Southwest corner (tighter)
-        [32.0, 76.5]   # Northeast corner (tighter)
+        [30.4, 73.9],  # Southwest corner (very tight to Punjab borders)
+        [32.5, 76.0]   # Northeast corner (very tight to Punjab borders)
     ]
     m.fit_bounds(bounds)
     
-    # Add a rectangle boundary for Punjab
-    folium.Rectangle(
-        bounds=bounds,
-        color="#444444",
-        weight=1,
-        fill=False,
-        fill_opacity=0.0,
-        dashArray="5, 5",
-    ).add_to(m)
+    # Set the max bounds to prevent panning outside of Punjab
+    options = {
+        'maxBounds': bounds,
+        'maxBoundsViscosity': 1.0  # Makes the bounds "hard" - can't drag outside
+    }
+    m.options.update(options)
     
     return m
 

@@ -165,9 +165,12 @@ def main():
         map_data = st_folium(
             map_obj, 
             width="100%",
-            height=550,
+            height=600,
             returned_objects=["last_active_drawing", "last_clicked"],
-            key="folium_map"
+            key="folium_map",
+            # Ensure proper rendering with no overlap with console
+            feature_group_to_add=None,
+            use_container_width=True
         )
         
         # Handle map click events to update selected districts
