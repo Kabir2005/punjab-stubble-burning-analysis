@@ -18,6 +18,7 @@ def create_yearly_trend_chart(yearly_data):
     if yearly_data.empty:
         return create_empty_chart("No data available for selected filters")
     
+    # Create a more visually appealing line chart
     fig = px.line(
         yearly_data, 
         x='year', 
@@ -25,17 +26,49 @@ def create_yearly_trend_chart(yearly_data):
         markers=True,
         line_shape='linear',
         labels={'year': 'Year', 'count': 'Number of Fire Events'},
-        title='Yearly Fire Event Trends'
+        title='Yearly Fire Event Trends',
+        color_discrete_sequence=['#8b4513'],  # Brown color to match theme
     )
     
+    # Customize styling
+    fig.update_traces(
+        line=dict(width=3),
+        marker=dict(size=8, line=dict(width=2, color='#ffffff'))
+    )
+    
+    # Add a subtle area fill
+    fig.add_traces(
+        go.Scatter(
+            x=yearly_data['year'], 
+            y=yearly_data['count'],
+            mode='none',
+            fill='tozeroy',
+            fillcolor='rgba(139, 69, 19, 0.1)',
+            showlegend=False
+        )
+    )
+    
+    # Improve layout
     fig.update_layout(
         xaxis=dict(
             tickmode='array',
             tickvals=yearly_data['year'].tolist(),
-            ticktext=[str(year) for year in yearly_data['year'].tolist()]
+            ticktext=[str(int(year)) for year in yearly_data['year'].tolist()],
+            showgrid=True,
+            gridcolor='rgba(0,0,0,0.05)',
+            zeroline=False
         ),
+        yaxis=dict(
+            showgrid=True,
+            gridcolor='rgba(0,0,0,0.05)',
+            zeroline=False
+        ),
+        plot_bgcolor='white',
         height=300,
-        margin=dict(l=20, r=20, t=50, b=20)
+        margin=dict(l=20, r=20, t=50, b=20),
+        title_font=dict(size=16, color='#8b4513'),
+        title_x=0.5,
+        hovermode='x unified'
     )
     
     return fig
@@ -62,25 +95,58 @@ def create_monthly_bar_chart(monthly_data):
     # Sort by month number
     monthly_data = monthly_data.sort_values('month')
     
-    fig = px.bar(
-        monthly_data, 
-        x='month_name', 
-        y='count',
-        labels={'month_name': 'Month', 'count': 'Number of Fire Events'},
-        title='Monthly Fire Event Distribution',
-        color='count',
-        color_continuous_scale=px.colors.sequential.Reds
+    # Create color gradient - earthy tones for stubble burning theme
+    colors = ['#f8d5c0', '#efb28c', '#e49066', '#d97149', '#c94c26', '#a63b1f', '#8b4513']
+    
+    # Calculate color based on relative count
+    max_count = monthly_data['count'].max()
+    monthly_data['color_idx'] = monthly_data['count'].apply(
+        lambda x: min(int(6 * x / max_count) if max_count > 0 else 0, 6)
     )
+    monthly_data['color'] = monthly_data['color_idx'].apply(lambda x: colors[x])
+    
+    # Create bar chart with custom colors
+    fig = go.Figure()
+    
+    # Add bars with custom styling
+    fig.add_trace(go.Bar(
+        x=monthly_data['month_name'],
+        y=monthly_data['count'],
+        marker_color=monthly_data['color'],
+        text=monthly_data['count'],
+        textposition='outside',
+        hovertemplate='<b>%{x}</b><br>Fire Events: %{y}<extra></extra>'
+    ))
     
     # Custom x-axis order based on month
     month_names = [month_order.get(m, 'Unknown') for m in range(1, 13)]
     present_months = monthly_data['month_name'].unique()
     ordered_months = [m for m in month_names if m in present_months]
     
+    # Enhanced styling
     fig.update_layout(
-        xaxis={'categoryorder': 'array', 'categoryarray': ordered_months},
+        title={
+            'text': 'Monthly Fire Event Distribution',
+            'font': {'size': 16, 'color': '#8b4513'},
+            'x': 0.5
+        },
+        xaxis={
+            'categoryorder': 'array', 
+            'categoryarray': ordered_months,
+            'title': 'Month',
+            'showgrid': False,
+            'tickangle': 0
+        },
+        yaxis={
+            'title': 'Number of Fire Events',
+            'showgrid': True,
+            'gridcolor': 'rgba(0,0,0,0.05)',
+            'zeroline': False
+        },
+        plot_bgcolor='white',
         height=300,
-        margin=dict(l=20, r=20, t=50, b=20)
+        margin=dict(l=20, r=20, t=50, b=20),
+        hovermode='x unified'
     )
     
     return fig

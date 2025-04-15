@@ -13,15 +13,40 @@ import visualization as vis
 # Set page configuration
 st.set_page_config(
     page_title="Punjab Stubble Burning Analysis",
-    page_icon="🔥",
+    page_icon="🌾",
     layout="wide"
 )
 
 # Add custom CSS to make the map container larger and improve the UI
 st.markdown("""
 <style>
-    .sidebar .sidebar-content {
-        width: 375px;
+    /* Hide developer console overlay */
+    .stDeployButton, .viewerBadge_container__1QSob, header {
+        display: none !important;
+    }
+    div[data-testid="stToolbar"] {
+        display: none !important;
+    }
+    .stStatusWidget, .stDecoration {
+        display: none !important;
+    }
+    .stWarning {
+        display: none !important;
+    }
+    
+    /* Improved styling */
+    .main .block-container {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+    
+    .stApp {
+        background-color: #f8f9fa;
+    }
+    
+    .stSidebar {
+        background-color: #ffffff;
+        border-left: 1px solid #e9ecef;
     }
     
     .stButton>button {
@@ -30,6 +55,23 @@ st.markdown("""
         height: 28px;
         padding: 0px 15px;
         margin: 0px 2px;
+        background-color: #f1f3f5;
+        border: 1px solid #dee2e6;
+        color: #495057;
+    }
+    
+    .stButton>button:hover {
+        background-color: #e9ecef;
+        border-color: #ced4da;
+    }
+    
+    .stButton>button[data-baseweb="button"][kind="primary"] {
+        background-color: #8b4513;
+        color: white;
+    }
+    
+    .stButton>button[data-baseweb="button"][kind="primary"]:hover {
+        background-color: #7d3913;
     }
     
     div[data-testid="stVerticalBlock"] > div[style*="flex-direction: column;"] > div[data-testid="stVerticalBlock"] {
@@ -40,12 +82,59 @@ st.markdown("""
         height: calc(100vh - 80px);
         width: 100%;
         margin-bottom: 20px;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
     }
     
     .year-selector {
         display: flex;
         flex-wrap: wrap;
         gap: 5px;
+    }
+    
+    /* Header styling */
+    h1, h2, h3 {
+        color: #8b4513;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    /* Metrics styling */
+    div[data-testid="metric-container"] {
+        background-color: #fff;
+        border-radius: 8px;
+        padding: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    div[data-testid="metric-container"] > div:first-child {
+        color: #8b4513;
+    }
+    
+    div[data-testid="stHorizontalBlock"] {
+        gap: 10px;
+    }
+    
+    /* Chart styling */
+    div[data-testid="stPlotlyChart"] {
+        background-color: white;
+        border-radius: 8px;
+        padding: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    /* Divider styling */
+    hr {
+        border-color: #e9ecef;
+        margin: 1rem 0;
+    }
+    
+    /* Info box styling */
+    div[data-testid="stAlert"] {
+        background-color: #f1f8ff;
+        border-color: #bee3f8;
+        color: #2a4365;
+        border-radius: 8px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -108,11 +197,13 @@ def main():
     # Main content - Map and interactive elements
     with left_col:
         # App title & brief description
-        st.title("🔥 Punjab Stubble Burning Analysis")
+        st.title("Punjab Stubble Burning Analysis")
         st.markdown("""
-        Interactive visualization of stubble burning across Punjab districts (2020-2025).
-        Click on districts or use filters to explore fire events data.
-        """)
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #8b4513;">
+            <p style="margin: 0; color: #495057;">Interactive visualization of stubble burning across Punjab districts. 
+            Click on districts or use filters to explore fire events data.</p>
+        </div>
+        """, unsafe_allow_html=True)
 
         # Create and display map
         map_obj = mh.render_map(
