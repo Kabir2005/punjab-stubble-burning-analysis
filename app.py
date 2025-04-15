@@ -49,50 +49,6 @@ st.markdown("""
         border-left: 1px solid #e9ecef;
     }
     
-    .stButton>button {
-        border-radius: 20px;
-        font-size: 12px;
-        height: 28px;
-        padding: 0px 15px;
-        margin: 0px 2px;
-        background-color: #f1f3f5;
-        border: 1px solid #dee2e6;
-        color: #495057;
-    }
-    
-    .stButton>button:hover {
-        background-color: #e9ecef;
-        border-color: #ced4da;
-    }
-    
-    .stButton>button[data-baseweb="button"][kind="primary"] {
-        background-color: #8b4513;
-        color: white;
-    }
-    
-    .stButton>button[data-baseweb="button"][kind="primary"]:hover {
-        background-color: #7d3913;
-    }
-    
-    div[data-testid="stVerticalBlock"] > div[style*="flex-direction: column;"] > div[data-testid="stVerticalBlock"] {
-        gap: 5px !important;
-    }
-    
-    .map-container {
-        height: calc(100vh - 80px);
-        width: 100%;
-        margin-bottom: 20px;
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    
-    .year-selector {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 5px;
-    }
-    
     /* Header styling */
     h1, h2, h3 {
         color: #8b4513;
