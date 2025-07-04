@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 import time
-from streamlit_folium import st_folium
+from streamlit_folium import st_folium, folium_static
 import json
 
 # Import custom modules
